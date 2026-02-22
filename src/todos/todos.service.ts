@@ -10,7 +10,7 @@ export class TodosService {
     private nextId=1;
     create(createTodoDto: CreateTodoDto): Todo{
         const todo: Todo={
-            id: this.nextId,
+            id: this.nextId++,
             title: createTodoDto.title,
             description: createTodoDto.description,
             isCompleted: false,
