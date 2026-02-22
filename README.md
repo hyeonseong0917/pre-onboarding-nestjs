@@ -1,6 +1,6 @@
 # pre-onboarding-nestjs
 
-NestJS 실무 전 학습용 Todo List REST API 프로젝트입니다.
+NestJS 기술 스택 학습용 Todo List REST API 프로젝트입니다.
 
 ---
 
