@@ -10,6 +10,7 @@ import { Todo } from './todos/entities/todo.entity';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -22,7 +23,7 @@ import { Todo } from './todos/entities/todo.entity';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: [Todo],
-        synchronize: true,
+        synchronize: configService.get('NODE_ENV') !=='production',
       }),
     }),
     TodosModule,
