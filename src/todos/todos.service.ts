@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { Todo } from './entities/todo.entity';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
 
 @Injectable()
 export class TodosService {
@@ -17,8 +18,23 @@ export class TodosService {
     return await this.todoRepository.save(todo);
   }
 
-  async findAll(): Promise<Todo[]> {
-    return await this.todoRepository.find();
+  async findAll(query: PaginationQueryDto) {
+    const {page,limit}=query;
+    const skip=(page-1)*limit;
+    const [todos, total]=await this.todoRepository.findAndCount({
+      skip: skip,
+      take: limit,
+      order: {createdAt: 'DESC'},
+    });
+    return {
+      todos,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total/limit),
+      }
+    }
   }
 
   async findOne(id: number): Promise<Todo> {
