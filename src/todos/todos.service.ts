@@ -1,57 +1,70 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Todo } from './entities/todo.entity';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
-import { Todo } from './entities/todo.entity';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 
 @Injectable()
 export class TodosService {
   constructor(
     @InjectRepository(Todo)
-    private todoRepository: Repository<Todo>,
+    private readonly todoRepository: Repository<Todo>,
   ) {}
 
-  async create(createTodoDto: CreateTodoDto): Promise<Todo> {
-    const todo = this.todoRepository.create(createTodoDto);
-    return await this.todoRepository.save(todo);
+  async create(createTodoDto: CreateTodoDto, userId: number): Promise<Todo> {
+    const todo = this.todoRepository.create({
+      ...createTodoDto,
+      userId, // ✅ 생성할 때 userId 심기
+    });
+    return this.todoRepository.save(todo);
   }
 
-  async findAll(query: PaginationQueryDto) {
-    const {page,limit}=query;
-    const skip=(page-1)*limit;
-    const [todos, total]=await this.todoRepository.findAndCount({
-      skip: skip,
+  async findAll(userId: number, query: PaginationQueryDto) {
+    const { page = 1, limit = 10 } = query;
+
+    const [todos, total] = await this.todoRepository.findAndCount({
+      where: { userId }, // ✅ 내 Todo만 조회
+      skip: (page - 1) * limit,
       take: limit,
-      order: {createdAt: 'DESC'},
+      order: { createdAt: 'DESC' },
     });
+
     return {
-      todos,
+      data: todos,
       meta: {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total/limit),
-      }
-    }
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
-  async findOne(id: number): Promise<Todo> {
+  async findOne(id: number, userId: number): Promise<Todo> {
     const todo = await this.todoRepository.findOne({ where: { id } });
-    if (!todo) throw new NotFoundException(`${id}번 Todo가 없습니다.`);
+
+    if (!todo) {
+      throw new NotFoundException(`Todo #${id}를 찾을 수 없습니다`);
+    }
+
+    // ✅ 남의 Todo 접근 차단
+    if (todo.userId !== userId) {
+      throw new ForbiddenException('본인의 Todo만 조회할 수 있습니다');
+    }
+
     return todo;
   }
 
-  async update(id: number, updateTodoDto: UpdateTodoDto): Promise<Todo> {
-    const todo = await this.findOne(id);
+  async update(id: number, updateTodoDto: UpdateTodoDto, userId: number): Promise<Todo> {
+    const todo = await this.findOne(id, userId); // ✅ findOne에서 권한 체크 같이 함
     Object.assign(todo, updateTodoDto);
-    return await this.todoRepository.save(todo);
+    return this.todoRepository.save(todo);
   }
 
-  async remove(id: number): Promise<{ message: string }> {
-    const todo = await this.findOne(id);
+  async remove(id: number, userId: number): Promise<void> {
+    const todo = await this.findOne(id, userId); // ✅ findOne에서 권한 체크 같이 함
     await this.todoRepository.remove(todo);
-    return { message: '삭제되었습니다.' };
   }
 }
