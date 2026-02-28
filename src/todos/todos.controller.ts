@@ -1,4 +1,4 @@
-import { Controller, Query, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Request, Controller, Query, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
@@ -11,23 +11,23 @@ export class TodosController {
     constructor(private readonly todoService: TodosService){}
 
     @Post()
-    create(@Body() createTodoDto: CreateTodoDto){
-        return this.todoService.create(createTodoDto);
+    create(@Request() req, @Body() createTodoDto: CreateTodoDto){
+        return this.todoService.create(createTodoDto, req.user.sub);
     }
     @Get()
-    findAll(@Query() query: PaginationQueryDto){
-        return this.todoService.findAll(query);
+    findAll(@Request() req, @Query() query: PaginationQueryDto){
+        return this.todoService.findAll(req.user.userId, query);
     }
     @Get(':id')
-    findOne(@Param('id') id: string){
-        return this.todoService.findOne(+id);
+    findOne(@Request() req,@Param('id') id: string){
+        return this.todoService.findOne(+id, req.user.sub);
     }
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto){
-        return this.todoService.update(+id,updateTodoDto);
+    update(@Request() req, @Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto){
+        return this.todoService.update(+id,updateTodoDto, req.user.sub);
     }
     @Delete(':id')
-    remove(@Param('id') id: string){
-        return this.todoService.remove(+id);
+    remove(@Request() req,@Param('id') id: string){
+        return this.todoService.remove(+id, req.user.sub);
     }
 }
