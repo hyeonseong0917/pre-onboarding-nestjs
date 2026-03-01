@@ -4,7 +4,10 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Todos')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('todos')
 export class TodosController {
